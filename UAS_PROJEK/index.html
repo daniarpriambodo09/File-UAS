@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Penjualan | Analytics</title>
+   
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #f8f8f8;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f5f6fa;
+            --card-background: #ffffff;
+            --text-color: #ffffff;
+            --border-radius: 15px;
+            --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            padding: 25px;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db, #2980b9);
+            color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            margin-bottom: 35px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+
+
+        h1 {
+            margin: 0;
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(247, 231, 231, 0.2);
+        }
+
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+
+        .stat-card {
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--accent-color));
+        }
+
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgb(255, 255, 255);
+        }
+
+
+        .stat-card i {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+
+
+        .stat-card:hover i {
+            transform: scale(1.1);
+        }
+
+
+        .stat-card h3 {
+            margin: 15px 0;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 35px;
+        }
+
+
+        .map-container {
+            grid-column: 1 / -1;
+            height: 500px;
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+
+        .map-container:hover {
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+
+        .chart-container {
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            min-height: 400px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+
+        .chart-container:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(249, 247, 247, 0.15);
+        }
+
+
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: calc(var(--border-radius) - 5px);
+        }
+
+
+        .filters {
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 35px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+
+        .filters:hover {
+            box-shadow: 0 12px 24px rgb(255, 255, 255);
+        }
+
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+
+        select {
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            border: 2px solid var(--secondary-color);
+            font-size: 1rem;
+            color: var(--text-color);
+            background-color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 250px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233498db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+
+
+        select:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+
+
+        label {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        @media (max-width: 1200px) {
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+
+
+            .filters {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+
+            .filter-group {
+                width: 100%;
+            }
+
+
+            select {
+                width: 100%;
+            }
+
+
+            h1 {
+                font-size: 2rem;
+            }
+
+
+            .stat-card {
+                padding: 20px;
+            }
+
+
+            .stat-card i {
+                font-size: 2.5rem;
+            }
+        }
+
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #1a1a2e;
+                --card-background: #0d0865;
+                --text-color: #08e62d;
+                --primary-color: #0089fa;
+            }
+
+
+            select {
+                background-color: #16213e;
+                color: #e5e5e5;
+            }
+        }
+    </style>
+</head>
+<body>
+       
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+
+    <div class="header">
+        <h1>Dashboard Penjualan</h1>
+        <p class="author">by Daniar Priambodo</p>
+    </div>
+
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <i class="fas fa-store"></i>
+            <h3>Total Cabang</h3>
+            <p id="totalBranches">0</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>Total Penjualan</h3>
+            <p id="totalSales">Rp 0</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Periode</h3>
+            <p id="currentPeriod">-</p>
+        </div>
+    </div>
+
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="branchFilter">Filter Cabang:</label>
+            <select id="branchFilter">
+                <option value="all">Semua Cabang</option>
+            </select>
+        </div>
+    </div>
+
+
+    <div class="dashboard-container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+       
+        <div class="chart-container">
+            <canvas id="barChart"></canvas>
+        </div>
+       
+        <div class="chart-container">
+            <canvas id="lineChart"></canvas>
+        </div>
+       
+        <div class="chart-container">
+            <canvas id="scatterChart"></canvas>
+        </div>
+       
+        <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   
+    <script>
+        // Script JavaScript sama seperti sebelumnya
+        let charts = {
+            barChart: null,
+            lineChart: null,
+            scatterChart: null,
+            pieChart: null
+        };
+       
+        const map = L.map('map').setView([-2.5489, 118.0149], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+
+        function showLoading() {
+            document.querySelector('.loading-overlay').style.display = 'flex';
+        }
+
+
+        function hideLoading() {
+            document.querySelector('.loading-overlay').style.display = 'none';
+        }
+
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+
+        function updateDashboardStats(data) {
+            const totalBranches = data.length;
+            const totalSales = data.reduce((sum, branch) => sum + Number(branch.penjualan_bulanan), 0);
+
+
+            document.getElementById('totalBranches').textContent = totalBranches;
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+            document.getElementById('currentPeriod').textContent = new Date().toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long'
+            });
+        }
+
+
+        async function loadBranches() {
+            showLoading();
+            try {
+                const response = await fetch('api.php?action=getAllBranches');
+                const data = await response.json();
+               
+                const branchFilter = document.getElementById('branchFilter');
+                data.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.id_cabang;
+                    option.textContent = branch.nama_cabang;
+                    branchFilter.appendChild(option);
+                });
+               
+                loadData('all');
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+
+        async function loadData(branchId) {
+            showLoading();
+            try {
+                const response = await fetch(`api.php?action=getBranchSales&branch_id=${branchId}`);
+                const data = await response.json();
+               
+                // Clear existing markers
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+               
+                // Add new markers
+                data.forEach(branch => {
+                    const marker = L.marker([branch.latitude, branch.longitude])
+                        .addTo(map)
+                        .bindPopup(`
+                            <strong>${branch.nama_cabang}</strong><br>
+                            Penjualan: ${formatCurrency(branch.penjualan_bulanan)}<br>
+                            Tanggal: ${new Date(branch.tanggal_penjualan).toLocaleDateString('id-ID')}
+                        `);
+                });
+               
+                updateDashboardStats(data);
+                updateCharts(data);
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+
+        function updateCharts(data) {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 12 }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: {
+                            top: 10,
+                            bottom: 30
+                        }
+                    }
+                }
+            };
+
+
+            // Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            charts.barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => item.nama_cabang),
+                    datasets: [{
+                        label: 'Penjualan Bulanan',
+                        data: data.map(item => item.penjualan_bulanan),
+                        backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        title: {
+                            ...chartOptions.plugins.title,
+                            text: 'Penjualan per Cabang'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => formatCurrency(value)
+                            }
+                        }
+                    }
+                }
+            });
+           
+            // Line Chart
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            charts.lineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.tanggal_penjualan).toLocaleDateString('id-ID')),
+                    datasets: [{
+                        label: 'Trend Penjualan',
+                        data: data.map(item => item.penjualan_bulanan),
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        title: {
+                            ...chartOptions.plugins.title,
+                            text: 'Trend Penjualan'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => formatCurrency(value)
+                            }
+                        }
+                    }
+                }
+            });
+           
+            // Scatter Plot
+            const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+            charts.scatterChart = new Chart(scatterCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Penjualan vs Lokasi',
+                        data: data.map(item => ({
+                            x: item.longitude,
+                            y: item.penjualan_bulanan
+                        })),
+                        backgroundColor: 'rgba(231, 76, 60, 0.8)'
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        title: {
+                            ...chartOptions.plugins.title,
+                            text: 'Penjualan vs Lokasi'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: value => formatCurrency(value)
+                            }
+                        }
+                    }
+                }
+            });
+           
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            charts.pieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.map(item => item.nama_cabang),
+                    datasets: [{
+                        data: data.map(item => item.penjualan_bulanan),
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.8)',
+                            'rgba(46, 204, 113, 0.8)',
+                            'rgba(231, 76, 60, 0.8)',
+                            'rgba(241, 196, 15, 0.8)',
+                            'rgba(155, 89, 182, 0.8)',
+                            'rgba(52, 73, 94, 0.8)',
+                            'rgba(26, 188, 156, 0.8)',
+                            'rgba(230, 126, 34, 0.8)',
+                            'rgba(149, 165, 166, 0.8)',
+                            'rgba(211, 84, 0, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        title: {
+                            ...chartOptions.plugins.title,
+                            text: 'Distribusi Penjualan'
+                        }
+                    }
+                }
+            });
+        }
+       
+        // Event Listeners
+        document.getElementById('branchFilter').addEventListener('change', (e) => {
+            loadData(e.target.value);
+        });
+   
+        // Load initial data
+        loadBranches();
+    </script>
+</body>
+</html>
+</body>
+</html>
